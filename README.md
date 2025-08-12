@@ -83,6 +83,49 @@ rnatranslator/
 ```
 ---
 
+
+## Usage
+
+### Quick Start (Hugging Face)
+We provide a simple, Hugging Face–based interface to use our pretrained model to generate RNA sequences. Below, we show how we install, load, and run the model, along with small examples you can copy–paste. 
+
+```python
+from transformers import T5ForConditionalGeneration, PreTrainedTokenizerFast
+
+def postprocess_rna(rna):
+    return rna.replace('b', 'A').replace('j', 'C').replace(
+                    'u', 'U').replace('z', 'G').replace(' ', '').replace(
+                    'B', 'A').replace('J', 'C').replace('U', 'U').replace('Z', 'G')
+
+# Load model
+model = T5ForConditionalGeneration.from_pretrained("SobhanShukueian/rnatranslator")
+
+# Load separate tokenizers
+protein_tokenizer = PreTrainedTokenizerFast.from_pretrained("SobhanShukueian/rnatranslator", subfolder="protein_tokenizer")
+rna_tokenizer = PreTrainedTokenizerFast.from_pretrained("SobhanShukueian/rnatranslator", subfolder="rna_tokenizer")
+
+
+protein_seq = "MSGGGVIRGPAGNNDCRIYVGNLPPDIRTKDIEDVFYKYGAIRDIDLKNRRGGPPFAFVEFEDPRDAEDAVYGRDGYDYDGYRLRVEFPRSGRGTGRGGGGGGGGGAPRGRYGPPSRRSENRVVVSGLPPSGSWQDLKDHMREAGDVCYADVYRDGTGVVEFVRKEDMTYAVRKLDNTKFRSHEGETAYIRVKVDGPRSPSYGRSRSRSRSRSRSRSRSNSRSRSYSPRRSRGSPRYSPRHSRSRSRT"
+inputs = protein_tokenizer(protein_seq, return_tensors="pt").input_ids
+
+# Generate RNA
+gen_args = {
+    'max_length': 256,
+    'repetition_penalty': 1.5,
+    'encoder_repetition_penalty': 1.3,
+    'num_return_sequences': 1,
+    'top_k': 30, 
+    'temperature': 1.5, 
+    'num_beams': 1,
+    'do_sample': True,
+}
+
+outputs = model.generate(inputs, **gen_args)
+rna_sequence = rna_tokenizer.decode(outputs[0], skip_special_tokens=True)
+print(postprocess_rna(rna_sequence))
+```
+
+
 ## Usage Manual
 
 RNAtranslator supports three main operational modes: training, generation, and evaluation. The main script (`main.py`) dispatches the appropriate procedure based on the selected run mode.
